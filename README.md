@@ -1,4 +1,4 @@
-### Features
+# Features
 Semi-Supervised Learning: Teacher-student architecture with exponential moving average updates
 CLIP-Based Filtering: Intelligent unlabeled data filtering using CLIP vision-language model
 Diffusion Model Augmentation: Advanced data augmentation using diffusion models
