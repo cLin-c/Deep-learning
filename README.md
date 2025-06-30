@@ -70,4 +70,42 @@ names: ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 
 wget https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt
 ```
 
+### Training
+### Method 1: Standard Semi-Supervised (Recommended)
+```markdown
+```bash
+python train_V3.py \
+    --weights yolov9-c.pt \
+    --cfg models/detect/yolov9-c.yaml \
+    --data data/NEU-DET/data.yaml \
+    --epochs 300 \
+    --batch-size 8 \
+    --imgsz 640 \
+    --device 0 \
+    --patience 9999
+```
 
+### Method 2: Semi-Supervised + Diffusion Augmentation
+```markdown
+```bash
+python train_V4.py \
+    --weights yolov9-c.pt \
+    --cfg models/detect/yolov9-c.yaml \
+    --data data/NEU-DET/data.yaml \
+    --epochs 300 \
+    --batch-size 4 \
+    --imgsz 640 \
+    --device 0 \
+    --patience 9999
+```
+
+### Inference
+```markdown
+```bash
+python detect_dual.py \
+    --source data/images/test.jpg \
+    --weights runs/train/exp/weights/best.pt \
+    --img 640 \
+    --device 0 \
+    --name results
+```
