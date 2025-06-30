@@ -40,16 +40,28 @@ conda install pytorch torchvision torchaudio cpuonly -c pytorch
 ```
 
 ### Step 3: Install Dependencies
-bash# Core dependencies
+```markdown
+```bash
+# Core dependencies
 pip install numpy opencv-python Pillow matplotlib seaborn pandas scipy scikit-learn tqdm PyYAML tensorboard
-
 # CLIP support
 pip install git+https://github.com/openai/CLIP.git
-
 # Diffusion model support (for V4)
 pip install diffusers transformers accelerate
-
 # Optional: for acceleration and experiment tracking
 pip install xformers wandb comet_ml thop
+```
+
+### Data Configuration (data.yaml)
+```markdown
+```bash
+path: ./data/NEU-DET
+train: train_split/images
+val: test_split/images
+
+nc: 6
+names: ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 'scratches']
+```
+
 
 
