@@ -63,5 +63,11 @@ nc: 6
 names: ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 'scratches']
 ```
 
+### Quick Start-Download Pretrained Weights
+```markdown
+```bash
+# Download YOLOv9-C pretrained weights
+wget https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt
+```
 
 
