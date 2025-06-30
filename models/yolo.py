@@ -34,7 +34,7 @@ class Detect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=6, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
@@ -83,7 +83,7 @@ class DDetect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=6, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
@@ -132,7 +132,7 @@ class DualDetect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=6, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch) // 2  # number of detection layers
@@ -195,9 +195,9 @@ class DualDDetect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=6, ch=(), inplace=True):  # detection layer
         super().__init__()
-        self.nc = nc  # number of classes
+        self.nc = nc  # nuer of classes
         self.nl = len(ch) // 2  # number of detection layers
         self.reg_max = 16
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
@@ -264,7 +264,7 @@ class TripleDetect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=6, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch) // 3  # number of detection layers
@@ -340,7 +340,7 @@ class TripleDDetect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=6, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch) // 3  # number of detection layers
@@ -418,7 +418,7 @@ class TripleDDetect(nn.Module):
 
 class Segment(Detect):
     # YOLO Segment head for segmentation models
-    def __init__(self, nc=80, nm=32, npr=256, ch=(), inplace=True):
+    def __init__(self, nc=6, nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, ch, inplace)
         self.nm = nm  # number of masks
         self.npr = npr  # number of protos
@@ -441,7 +441,7 @@ class Segment(Detect):
 
 class DSegment(DDetect):
     # YOLO Segment head for segmentation models
-    def __init__(self, nc=80, nm=32, npr=256, ch=(), inplace=True):
+    def __init__(self, nc=6, nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, ch[:-1], inplace)
         self.nl = len(ch)-1
         self.nm = nm  # number of masks
@@ -465,7 +465,7 @@ class DSegment(DDetect):
 
 class DualDSegment(DualDDetect):
     # YOLO Segment head for segmentation models
-    def __init__(self, nc=80, nm=32, npr=256, ch=(), inplace=True):
+    def __init__(self, nc=6, nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, ch[:-2], inplace)
         self.nl = (len(ch)-2) // 2
         self.nm = nm  # number of masks
@@ -493,7 +493,7 @@ class DualDSegment(DualDDetect):
 
 class Panoptic(Detect):
     # YOLO Panoptic head for panoptic segmentation models
-    def __init__(self, nc=80, sem_nc=93, nm=32, npr=256, ch=(), inplace=True):
+    def __init__(self, nc=6, sem_nc=93, nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, ch, inplace)
         self.sem_nc = sem_nc
         self.nm = nm  # number of masks
@@ -577,106 +577,388 @@ class BaseModel(nn.Module):
         return self
 
 
+# class DetectionModel(BaseModel):
+#     # YOLO detection model
+#     def __init__(self, cfg='yolo.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
+#         super().__init__()
+#         if isinstance(cfg, dict):
+#             self.yaml = cfg  # model dict
+#         else:  # is *.yaml
+#             import yaml  # for torch hub
+#             self.yaml_file = Path(cfg).name
+#             with open(cfg, encoding='ascii', errors='ignore') as f:
+#                 self.yaml = yaml.safe_load(f)  # model dict
+
+#         # Define model
+#         ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
+#         if nc and nc != self.yaml['nc']:
+#             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
+#             self.yaml['nc'] = nc  # override yaml value
+#         if anchors:
+#             LOGGER.info(f'Overriding model.yaml anchors with anchors={anchors}')
+#             self.yaml['anchors'] = round(anchors)  # override yaml value
+#         self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
+#         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
+#         self.inplace = self.yaml.get('inplace', True)
+
+#         # Build strides, anchors
+#         m = self.model[-1]  # Detect()
+#         if isinstance(m, (Detect, DDetect, Segment, DSegment, Panoptic)):
+#             s = 256  # 2x min stride
+#             m.inplace = self.inplace
+#             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, DSegment, Panoptic)) else self.forward(x)
+#             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
+#             # check_anchor_order(m)
+#             # m.anchors /= m.stride.view(-1, 1, 1)
+#             self.stride = m.stride
+#             m.bias_init()  # only run once
+#         if isinstance(m, (DualDetect, TripleDetect, DualDDetect, TripleDDetect, DualDSegment)):
+#             s = 256  # 2x min stride
+#             m.inplace = self.inplace
+#             forward = lambda x: self.forward(x)[0][0] if isinstance(m, (DualDSegment)) else self.forward(x)[0]
+#             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
+#             # check_anchor_order(m)
+#             # m.anchors /= m.stride.view(-1, 1, 1)
+#             self.stride = m.stride
+#             m.bias_init()  # only run once
+
+#         # Init weights, biases
+#         initialize_weights(self)
+#         self.info()
+#         LOGGER.info('')
+
+#     def forward(self, x, augment=False, profile=False, visualize=False):
+#         if augment:
+#             return self._forward_augment(x)  # augmented inference, None
+#         return self._forward_once(x, profile, visualize)  # single-scale inference, train
+
+#     def _forward_augment(self, x):
+#         img_size = x.shape[-2:]  # height, width
+#         s = [1, 0.83, 0.67]  # scales
+#         f = [None, 3, None]  # flips (2-ud, 3-lr)
+#         y = []  # outputs
+#         for si, fi in zip(s, f):
+#             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
+#             yi = self._forward_once(xi)[0]  # forward
+#             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
+#             yi = self._descale_pred(yi, fi, si, img_size)
+#             y.append(yi)
+#         y = self._clip_augmented(y)  # clip augmented tails
+#         return torch.cat(y, 1), None  # augmented inference, train
+
+#     def _descale_pred(self, p, flips, scale, img_size):
+#         # de-scale predictions following augmented inference (inverse operation)
+#         if self.inplace:
+#             p[..., :4] /= scale  # de-scale
+#             if flips == 2:
+#                 p[..., 1] = img_size[0] - p[..., 1]  # de-flip ud
+#             elif flips == 3:
+#                 p[..., 0] = img_size[1] - p[..., 0]  # de-flip lr
+#         else:
+#             x, y, wh = p[..., 0:1] / scale, p[..., 1:2] / scale, p[..., 2:4] / scale  # de-scale
+#             if flips == 2:
+#                 y = img_size[0] - y  # de-flip ud
+#             elif flips == 3:
+#                 x = img_size[1] - x  # de-flip lr
+#             p = torch.cat((x, y, wh, p[..., 4:]), -1)
+#         return p
+
+#     def _clip_augmented(self, y):
+#         # Clip YOLO augmented inference tails
+#         nl = self.model[-1].nl  # number of detection layers (P3-P5)
+#         g = sum(4 ** x for x in range(nl))  # grid points
+#         e = 1  # exclude layer count
+#         i = (y[0].shape[1] // g) * sum(4 ** x for x in range(e))  # indices
+#         y[0] = y[0][:, :-i]  # large
+#         i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
+#         y[-1] = y[-1][:, i:]  # small
+#         return y
+
+# Model = DetectionModel  # retain YOLO 'Model' class for backwards compatibility
+
+# 集成mamba模块
+# 导入 Mamba 模块（基于线性状态空间模型的长序列建模组件）
+from mamba_ssm import Mamba
+
 class DetectionModel(BaseModel):
-    # YOLO detection model
-    def __init__(self, cfg='yolo.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
+    # YOLO detection model（检测模型）—— 结合 Mamba 增强长序列建模能力
+    def __init__(self, cfg='yolo.yaml', ch=3, nc=6, anchors=None, use_mamba=True):  # 新增参数 use_mamba
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
-        else:  # is *.yaml
+        else:  # 如果传入的是 YAML 文件路径
             import yaml  # for torch hub
             self.yaml_file = Path(cfg).name
             with open(cfg, encoding='ascii', errors='ignore') as f:
                 self.yaml = yaml.safe_load(f)  # model dict
 
-        # Define model
-        ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
+        # 定义模型输入通道数
+        ch = self.yaml['ch'] = self.yaml.get('ch', ch)
         if nc and nc != self.yaml['nc']:
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
-            self.yaml['nc'] = nc  # override yaml value
+            self.yaml['nc'] = nc  # 覆盖类别数
         if anchors:
             LOGGER.info(f'Overriding model.yaml anchors with anchors={anchors}')
-            self.yaml['anchors'] = round(anchors)  # override yaml value
-        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
-        self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
+            self.yaml['anchors'] = round(anchors)  # 覆盖锚框配置
+        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # 解析 YAML 构建模型
+        self.names = [str(i) for i in range(self.yaml['nc'])]  # 默认类别名称
         self.inplace = self.yaml.get('inplace', True)
 
+        # ----- 以下为 Mamba 集成部分 -----
+        if use_mamba:
+            # 这里假设检测头在 self.model 的最后一层，且为 Detect 类型
+            m = self.model[-1]
+            if isinstance(m, Detect):
+                new_cv2 = nn.ModuleList()
+                new_cv3 = nn.ModuleList()
+                # 对 cv2 分支进行修改：将原有的第二个卷积层替换为 Mamba 模块
+                for seq in m.cv2:
+                    modules = list(seq.children())
+                    # 假设 modules 为 [Conv, Conv, nn.Conv2d]
+                    # 取第一个卷积层输出的通道数作为 Mamba 的输入维度
+                    if hasattr(modules[0], 'conv'):
+                        dim = modules[0].conv.out_channels
+                    else:
+                        dim = modules[0].out_channels
+                    new_seq = nn.Sequential(
+                        modules[0],
+                        Mamba(dim=dim, depth=2, bidirectional=True),
+                        modules[2]
+                    )
+                    new_cv2.append(new_seq)
+                m.cv2 = new_cv2
+
+                # 同样对 cv3 分支修改
+                for seq in m.cv3:
+                    modules = list(seq.children())
+                    if hasattr(modules[0], 'conv'):
+                        dim = modules[0].conv.out_channels
+                    else:
+                        dim = modules[0].out_channels
+                    new_seq = nn.Sequential(
+                        modules[0],
+                        Mamba(dim=dim, depth=2, bidirectional=True),
+                        modules[2]
+                    )
+                    new_cv3.append(new_seq)
+                m.cv3 = new_cv3
+                LOGGER.info("Mamba 模块已集成到检测头中。")
+        # ----- Mamba 集成结束 -----
+
         # Build strides, anchors
-        m = self.model[-1]  # Detect()
+        m = self.model[-1]  # 检测头
         if isinstance(m, (Detect, DDetect, Segment, DSegment, Panoptic)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, DSegment, Panoptic)) else self.forward(x)
-            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
-            # check_anchor_order(m)
-            # m.anchors /= m.stride.view(-1, 1, 1)
+            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])
             self.stride = m.stride
-            m.bias_init()  # only run once
+            m.bias_init()  # 仅运行一次
         if isinstance(m, (DualDetect, TripleDetect, DualDDetect, TripleDDetect, DualDSegment)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0][0] if isinstance(m, (DualDSegment)) else self.forward(x)[0]
-            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
-            # check_anchor_order(m)
-            # m.anchors /= m.stride.view(-1, 1, 1)
+            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])
             self.stride = m.stride
-            m.bias_init()  # only run once
+            m.bias_init()  # 仅运行一次
 
-        # Init weights, biases
+        # 初始化权重与偏置，并输出模型信息
         initialize_weights(self)
         self.info()
         LOGGER.info('')
 
     def forward(self, x, augment=False, profile=False, visualize=False):
         if augment:
-            return self._forward_augment(x)  # augmented inference, None
-        return self._forward_once(x, profile, visualize)  # single-scale inference, train
+            return self._forward_augment(x)  # 增强推理
+        return self._forward_once(x, profile, visualize)  # 单尺度推理（训练模式）
 
     def _forward_augment(self, x):
-        img_size = x.shape[-2:]  # height, width
-        s = [1, 0.83, 0.67]  # scales
-        f = [None, 3, None]  # flips (2-ud, 3-lr)
-        y = []  # outputs
+        img_size = x.shape[-2:]  # 图像尺寸：高度、宽度
+        s = [1, 0.83, 0.67]  # 缩放比例
+        f = [None, 3, None]  # 翻转方式（2:上下翻转，3:左右翻转）
+        y = []  # 输出列表
         for si, fi in zip(s, f):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
-            yi = self._forward_once(xi)[0]  # forward
-            # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
+            yi = self._forward_once(xi)[0]  # 前向传播
             yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
-        y = self._clip_augmented(y)  # clip augmented tails
-        return torch.cat(y, 1), None  # augmented inference, train
+        y = self._clip_augmented(y)  # 裁剪增强推理结果
+        return torch.cat(y, 1), None  # 返回增强推理结果
 
     def _descale_pred(self, p, flips, scale, img_size):
-        # de-scale predictions following augmented inference (inverse operation)
+        # 对经过增强推理后的预测结果进行反缩放与反翻转操作
         if self.inplace:
-            p[..., :4] /= scale  # de-scale
+            p[..., :4] /= scale  # 反缩放
             if flips == 2:
-                p[..., 1] = img_size[0] - p[..., 1]  # de-flip ud
+                p[..., 1] = img_size[0] - p[..., 1]  # 反上下翻转
             elif flips == 3:
-                p[..., 0] = img_size[1] - p[..., 0]  # de-flip lr
+                p[..., 0] = img_size[1] - p[..., 0]  # 反左右翻转
         else:
-            x, y, wh = p[..., 0:1] / scale, p[..., 1:2] / scale, p[..., 2:4] / scale  # de-scale
+            x, y, wh = p[..., 0:1] / scale, p[..., 1:2] / scale, p[..., 2:4] / scale
             if flips == 2:
-                y = img_size[0] - y  # de-flip ud
+                y = img_size[0] - y
             elif flips == 3:
-                x = img_size[1] - x  # de-flip lr
+                x = img_size[1] - x
             p = torch.cat((x, y, wh, p[..., 4:]), -1)
         return p
 
     def _clip_augmented(self, y):
-        # Clip YOLO augmented inference tails
-        nl = self.model[-1].nl  # number of detection layers (P3-P5)
-        g = sum(4 ** x for x in range(nl))  # grid points
-        e = 1  # exclude layer count
-        i = (y[0].shape[1] // g) * sum(4 ** x for x in range(e))  # indices
-        y[0] = y[0][:, :-i]  # large
-        i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
-        y[-1] = y[-1][:, i:]  # small
+        # 裁剪增强推理中多余的预测结果
+        nl = self.model[-1].nl  # 检测层数量（例如 P3-P5）
+        g = sum(4 ** x for x in range(nl))  # 网格点总数
+        e = 1  # 排除层数
+        i = (y[0].shape[1] // g) * sum(4 ** x for x in range(e))
+        y[0] = y[0][:, :-i]  # 裁剪较大尺度
+        i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))
+        y[-1] = y[-1][:, i:]  # 裁剪较小尺度
         return y
-
 
 Model = DetectionModel  # retain YOLO 'Model' class for backwards compatibility
 
+# models/yolo1.py
+
+
+# # mamba+傅里叶模块
+# try:
+#     from mamba_ssm import Mamba
+# except ImportError:
+#     Mamba = None
+
+
+
+# class DetectionModel(BaseModel):
+#     # YOLO detection model（结合 Mamba增强长序列能力 + 傅里叶分支）
+#     def __init__(self, cfg='yolo.yaml', ch=3, nc=6, anchors=None, use_mamba=True):
+#         super().__init__()
+#         if isinstance(cfg, dict):
+#             self.yaml = cfg  # model dict
+#         else:  # 如果传入的是 YAML 文件路径
+#             import yaml
+#             self.yaml_file = Path(cfg).name
+#             with open(cfg, encoding='ascii', errors='ignore') as f:
+#                 self.yaml = yaml.safe_load(f)  # model dict
+
+#         # 定义模型输入通道数
+#         ch = self.yaml['ch'] = self.yaml.get('ch', ch)
+#         if nc and nc != self.yaml['nc']:
+#             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
+#             self.yaml['nc'] = nc  # 覆盖类别数
+#         if anchors:
+#             LOGGER.info(f'Overriding model.yaml anchors with anchors={anchors}')
+#             self.yaml['anchors'] = round(anchors)
+
+#         # 解析 YAML 构建 backbone + head
+#         self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])
+#         self.names = [str(i) for i in range(self.yaml['nc'])]
+#         self.inplace = self.yaml.get('inplace', True)
+
+#         # ------------------------- 以下为 Mamba 集成部分 -------------------------
+#         if use_mamba:
+#             m = self.model[-1]  # 假设检测头在 self.model 的最后一层
+#             if isinstance(m, Detect):
+#                 new_cv2 = nn.ModuleList()
+#                 new_cv3 = nn.ModuleList()
+#                 # 对 cv2 分支进行修改：将原有的第二个卷积层替换为 Mamba 模块
+#                 for seq in m.cv2:
+#                     modules = list(seq.children())
+#                     # 假设 modules 结构形如 [Conv, Conv, nn.Conv2d]
+#                     if hasattr(modules[0], 'conv'):
+#                         dim = modules[0].conv.out_channels
+#                     else:
+#                         dim = modules[0].out_channels
+#                     new_seq = nn.Sequential(
+#                         modules[0],
+#                         Mamba(dim=dim, depth=2, bidirectional=True) if Mamba else modules[1],
+#                         modules[2]
+#                     )
+#                     new_cv2.append(new_seq)
+#                 m.cv2 = new_cv2
+
+#                 # 同样对 cv3 分支修改
+#                 for seq in m.cv3:
+#                     modules = list(seq.children())
+#                     if hasattr(modules[0], 'conv'):
+#                         dim = modules[0].conv.out_channels
+#                     else:
+#                         dim = modules[0].out_channels
+#                     new_seq = nn.Sequential(
+#                         modules[0],
+#                         Mamba(dim=dim, depth=2, bidirectional=True) if Mamba else modules[1],
+#                         modules[2]
+#                     )
+#                     new_cv3.append(new_seq)
+#                 m.cv3 = new_cv3
+#                 LOGGER.info("Mamba 模块已集成到检测头中。")
+#         # ------------------------- Mamba 集成结束 -------------------------
+
+#         # ============ 傅里叶分支：在最后一个 Detect 中额外输出若干通道 =============
+#         # 你可以自行设定这个输出维度，比如 10 表示回归10维傅里叶系数 (可根据需要调整)
+#         self.fourier_dim = 10
+#         self.fourier_convs = None
+#         m = self.model[-1]
+#         if isinstance(m, Detect) and self.fourier_dim > 0:
+#             # 对每个输出层，都额外建一个 Conv2d => [out_channels -> fourier_dim]
+#             self.fourier_convs = nn.ModuleList([nn.Conv2d(x.out_channels, self.fourier_dim, 1)
+#                                                 for x in m.cv3])
+#             LOGGER.info(f"Detect层增加了 {self.fourier_dim} 维傅里叶分支。")
+
+#         # 构建 strides, anchors
+#         if isinstance(m, Detect):
+#             s = 256  # 2x min stride
+#             m.inplace = self.inplace
+#             forward = lambda x: self.forward(x)[0]
+#             # 做一次前向，计算 stride
+#             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])
+#             self.stride = m.stride
+#             m.bias_init()
+
+#         # 初始化权重
+#         initialize_weights(self)
+#         self.info()
+#         LOGGER.info('')
+
+#     def forward(self, x, augment=False, profile=False, visualize=False):
+#         if augment:
+#             return self._forward_augment(x)
+#         else:
+#             return self._forward_once(x, profile, visualize)
+
+#     def _forward_once(self, x, profile=False, visualize=False):
+#         # 原有 forward 逻辑
+#         # forward 过程中 self.model 的最后一层是 Detect，会返回 [P3, P4, P5] 之类
+#         for m in self.model:
+#             x = m(x)  # 不改变其本来输出
+
+#         # x 此时是 Detect 的输出 list => [bs, (nc+5)*anchors, h, w] * nl
+#         detection_pred = x  # 原 YOLO 检测分支输出
+#         fourier_pred = None
+
+#         # 若设置了 fourier_convs，就把 x 中对应特征图再过一次卷积
+#         if (self.fourier_convs is not None) and isinstance(x, list):
+#             # x 例如 [x_p3, x_p4, x_p5]
+#             # 分别经过 fourier_convs
+#             fourier_pred = []
+#             for feat_map, fconv in zip(x, self.fourier_convs):
+#                 # feat_map: [bs, out_ch, h, w]
+#                 # fconv:   [out_ch -> fourier_dim]
+#                 f_out = fconv(feat_map)  # => [bs, fourier_dim, h, w]
+#                 fourier_pred.append(f_out)
+
+#         # 返回一个三元结构：
+#         # [detection_pred, None(中间层你可自行需要), fourier_pred]
+#         return [detection_pred, None, fourier_pred]
+
+#     def _forward_augment(self, x):
+#         # 若你有多尺度/多flip 测试，可保留或自行实现，这里不做变动
+#         raise NotImplementedError("_forward_augment() not implemented.")
+
+#     def info(self, verbose=False, img_size=640):
+#         # 模型信息输出，保持原有
+#         name = self.__class__.__name__
+#         LOGGER.info(f"{name} Summary: 此处可打印结构或省略。")
+
+
+# Model = DetectionModel  # 保留 YOLO 'Model' 类名兼容
 
 class SegmentationModel(DetectionModel):
     # YOLO segmentation model
@@ -686,11 +968,11 @@ class SegmentationModel(DetectionModel):
 
 class ClassificationModel(BaseModel):
     # YOLO classification model
-    def __init__(self, cfg=None, model=None, nc=1000, cutoff=10):  # yaml, model, number of classes, cutoff index
+    def __init__(self, cfg=None, model=None, nc=6, cutoff=10):  # yaml, model, number of classes, cutoff index
         super().__init__()
         self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
-    def _from_detection_model(self, model, nc=1000, cutoff=10):
+    def _from_detection_model(self, model, nc=6, cutoff=10):
         # Create a YOLO classification model from a YOLO detection model
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend

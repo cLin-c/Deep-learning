@@ -1,0 +1,4 @@
+train: /home/tinnel/ccl/yolov9/data/NEU-DET/s_train_split
+val: /home/tinnel/ccl/yolov9/data/NEU-DET/test
+nc: 6
+names: ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 'scratches']  # Add your own class names

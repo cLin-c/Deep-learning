@@ -538,9 +538,13 @@ class Concat(nn.Module):
         super().__init__()
         self.d = dimension
 
+    # def forward(self, x):
+    #     return torch.cat(x, self.d)
     def forward(self, x):
+        # 如果传入是单个 Tensor 而不是列表/元组，先包装一下
+        if not isinstance(x, (list, tuple)):
+            x = [x]
         return torch.cat(x, self.d)
-
 
 class Shortcut(nn.Module):
     def __init__(self, dimension=0):
@@ -1006,7 +1010,7 @@ class AutoShape(nn.Module):
     def _apply(self, fn):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
-        from models.yolo import Detect, Segment
+        from models.yolo1 import Detect, Segment
         if self.pt:
             m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()
             if isinstance(m, (Detect, Segment)):

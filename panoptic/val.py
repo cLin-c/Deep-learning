@@ -19,7 +19,7 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 from pycocotools import mask as maskUtils
 from models.common import DetectMultiBackend
-from models.yolo import SegmentationModel
+from models.yolo1 import SegmentationModel
 from utils.callbacks import Callbacks
 from utils.coco_utils import getCocoIds, getMappingId, getMappingIndex
 from utils.general import (LOGGER, NUM_THREADS, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size,
